@@ -11,13 +11,13 @@ const userNotFound = next => {
 router.use('/google', require('./oauth'))
 
 router.get('/me', (req, res, next) => {
-  console.log('gotTo/Me')
-  if (!req.session.userId) {
+  if (!req.user) {
     userNotFound(next)
   } else {
-    User.findById(req.session.userId)
-      .then(user => user ? res.json(user) : userNotFound(next))
-      .catch(next)
+    // User.findById(req.session.userId)
+    //   .then(user => user ? res.json(user) : userNotFound(next))
+    //   .catch(next)
+    res.json(req.user);
   }
 })
 
@@ -31,8 +31,11 @@ router.put('/login', (req, res, next) => {
   })
     .then(user => {
       if (user) {
-        req.session.userId = user.id
-        res.json(user)
+        // req.session.userId = user.id
+        req.login(user, function(err) {
+          if (err) { return next(err); }
+          return res.json(user);
+        });
       } else {
         const err = new Error('Incorrect email or password!')
         err.status = 401
@@ -43,6 +46,7 @@ router.put('/login', (req, res, next) => {
 })
 
 router.delete('/logout', (req, res, next) => {
+  req.logout();
   req.session.destroy()
   res.status(204).end()
 })
